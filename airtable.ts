@@ -9,11 +9,10 @@ import {
   SelectResult,
   TableRecord,
   TableRecords,
-} from "./types.ts";
+} from './types.ts';
 
-import { AirtableError } from "./error.ts";
-import { hasAnyKey } from "./utils.ts";
-import { stringify } from "./deps.ts";
+import { AirtableError } from './error.ts';
+import { hasAnyKey } from './utils.ts';
 
 /**
  * Unofficial Airtable API client for Deno
@@ -48,10 +47,10 @@ export class Airtable {
       ...d,
       ...(options.useEnv
         ? {
-            apiKey: Deno.env.get("AIRTABLE_API_KEY"),
-            endpointUrl: Deno.env.get("AIRTABLE_ENDPOINT_URL"),
-            baseId: Deno.env.get("AIRTABLE_BASE_ID"),
-            tableName: Deno.env.get("AIRTABLE_TABLE_NAME"),
+            apiKey: Deno.env.get('AIRTABLE_API_KEY'),
+            endpointUrl: Deno.env.get('AIRTABLE_ENDPOINT_URL'),
+            baseId: Deno.env.get('AIRTABLE_BASE_ID'),
+            tableName: Deno.env.get('AIRTABLE_TABLE_NAME'),
           }
         : {}),
       ...options,
@@ -210,7 +209,7 @@ export class Airtable {
     if (data instanceof Array) {
       return this.jsonRequest<TableRecords<T>>({
         url: this.getRequestUrl(),
-        method: "POST",
+        method: 'POST',
         jsonBody: {
           records: data.map((fields) => ({ fields })),
           ...options,
@@ -220,7 +219,7 @@ export class Airtable {
 
     return this.jsonRequest<TableRecord<T>>({
       url: this.getRequestUrl(),
-      method: "POST",
+      method: 'POST',
       jsonBody: {
         fields: data,
         ...options,
@@ -286,7 +285,7 @@ export class Airtable {
     record?: T | RecordOptions,
     options?: RecordOptions
   ): Promise<TableRecord<T>> | Promise<TableRecords<T>> {
-    if (typeof idOrRecords === "string") {
+    if (typeof idOrRecords === 'string') {
       const id = idOrRecords;
       const fields = record;
       return this.updateOrReplace<T>({
@@ -363,7 +362,7 @@ export class Airtable {
     record?: T | RecordOptions,
     options?: RecordOptions
   ): Promise<TableRecord<T>> | Promise<TableRecords<T>> {
-    if (typeof idOrRecords === "string") {
+    if (typeof idOrRecords === 'string') {
       const id = idOrRecords;
       const fields = record;
       return this.updateOrReplace<T>({
@@ -413,13 +412,13 @@ export class Airtable {
 
   delete(ids: string | string[]): Promise<DeletedRecord | DeletedRecords> {
     return this.request<DeletedRecord | DeletedRecords>({
-      url: this.getRequestUrl({}, Array.isArray(ids) ? "" : ids),
-      method: "DELETE",
+      url: this.getRequestUrl({}, Array.isArray(ids) ? '' : ids),
+      method: 'DELETE',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       ...(Array.isArray(ids)
-        ? { body: ids.map((id) => `records[]=${id}`).join("&") }
+        ? { body: ids.map((id) => `records[]=${id}`).join('&') }
         : {}),
     });
   }
@@ -438,25 +437,25 @@ export class Airtable {
 
     if (!apiKey) {
       throw new AirtableError({
-        message: "An API key is required to connect to Airtable",
+        message: 'An API key is required to connect to Airtable',
       });
     }
 
     if (!endpointUrl) {
       throw new AirtableError({
-        message: "Endpoint URL is not defined",
+        message: 'Endpoint URL is not defined',
       });
     }
 
     if (!baseId) {
       throw new AirtableError({
-        message: "Base ID is not defined",
+        message: 'Base ID is not defined',
       });
     }
 
     if (!tableName) {
       throw new AirtableError({
-        message: "Table Name is not defined",
+        message: 'Table Name is not defined',
       });
     }
 
@@ -466,8 +465,27 @@ export class Airtable {
       encodeURIComponent(tableName),
       ...segments,
     ];
-    const queryString = hasAnyKey(query) ? "?" + stringify(query) : "";
-    return urlSegments.join("/").concat(queryString);
+    const queryValues = Object.keys(query).map((queryKey) =>
+      Array.isArray(query[queryKey])
+        ? // this is forms the query string for array values as per airtable's api
+          query[queryKey]
+            .map((value: Record<string, string>, index: number) => {
+              const attrs = Object.keys(value)
+                .map((attr: string) => {
+                  return `${queryKey}[${index}][${attr}]=${value[attr]}`;
+                })
+                .join('&');
+              return attrs;
+            })
+            .join('&')
+        : `${encodeURIComponent(queryKey)}=${encodeURIComponent(
+            query[queryKey]
+          )}`
+    );
+
+    const queryString = hasAnyKey(query) ? '?' + queryValues.join('&') : '';
+
+    return urlSegments.join('/').concat(queryString);
   }
 
   private async request<T>({
@@ -502,7 +520,7 @@ export class Airtable {
     return this.request<T>({
       headers: {
         ...headers,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(jsonBody),
       ...options,
@@ -517,9 +535,9 @@ export class Airtable {
   }: UpdateOrReplaceOptions<T>):
     | Promise<TableRecord<T>>
     | Promise<TableRecords<T>> {
-    const method = replace ? "PUT" : "PATCH";
+    const method = replace ? 'PUT' : 'PATCH';
 
-    if (typeof id === "string") {
+    if (typeof id === 'string') {
       return this.jsonRequest<TableRecord<T>>({
         url: this.getRequestUrl({}, id),
         method,
@@ -541,7 +559,7 @@ export class Airtable {
   }
 
   static defaultOptions: Partial<AirtableOptions> = {
-    endpointUrl: "https://api.airtable.com/v0",
+    endpointUrl: 'https://api.airtable.com/v0',
   };
 }
 
